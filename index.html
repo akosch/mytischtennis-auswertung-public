@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>myTischtennis-Auswertung</title>
+    <link rel="stylesheet" href="shared/result.css?v=31" />
+    <link rel="stylesheet" href="web.css?v=42" />
+  </head>
+  <body>
+    <dialog id="passwordDialog" aria-labelledby="passwordHeading">
+      <form id="passwordForm">
+        <h2 id="passwordHeading">Geschützte Ergebnisse</h2>
+        <p>Bitte gib die Passphrase ein, mit der die Ergebnisdatei verschlüsselt wurde.</p>
+        <label>Passphrase<input id="passwordInput" type="password" autocomplete="current-password" required /></label>
+        <div class="dialog-actions">
+          <button id="cancelPassword" class="secondary" type="button">Abbrechen</button>
+          <button class="primary" type="submit">Entschlüsseln</button>
+        </div>
+      </form>
+    </dialog>
+    <header>
+      <h1>TTR-Historien – Statistiken</h1>
+    </header>
+
+    <main>
+      <p id="status" role="status" aria-live="polite"></p>
+
+      <section class="player-section" aria-labelledby="playersHeading">
+        <div class="section-heading-row">
+          <h2 class="section-heading" id="playersHeading">Ausgewertete Spieler</h2>
+          <button id="togglePlayers" class="text-button" type="button" aria-expanded="true" aria-controls="playerControls">Ausblenden</button>
+        </div>
+        <div id="playerControls">
+          <div class="dataset-picker">
+            <div class="club-filter">
+              <span class="field-label">Verein</span>
+              <details class="multi-select" id="clubFilter">
+                <summary id="clubFilterSummary">Alle Vereine</summary>
+                <div id="clubFilterOptions" class="multi-select-options" role="group" aria-label="Vereine auswählen"></div>
+              </details>
+            </div>
+            <label class="player-select-control"><span class="field-label">Spieler</span>
+              <select id="playerSelect" hidden></select>
+              <details class="multi-select single-select-control" id="playerFilter">
+                <summary id="playerFilterSummary">Bitte Spieler auswählen</summary>
+                <div id="playerFilterOptions" class="multi-select-options" role="listbox" aria-label="Spieler auswählen"></div>
+              </details>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="filter-section" aria-labelledby="filtersHeading">
+        <div class="section-heading-row">
+          <h2 class="section-heading" id="filtersHeading">Filter</h2>
+          <button id="toggleFilters" class="text-button" type="button" aria-expanded="true" aria-controls="filters">Ausblenden</button>
+        </div>
+        <div class="filters" id="filters">
+          <label class="filter-query">Gegner suchen<input id="query" type="search" placeholder="Name" /></label>
+          <div class="filter-team">
+            <span class="field-label">Mannschaften</span>
+            <details class="multi-select" id="teamFilter">
+              <summary id="teamFilterSummary">Alle Mannschaften</summary>
+              <div id="teamFilterOptions" class="multi-select-options" role="group" aria-label="Vereine und Mannschaften auswählen"></div>
+            </details>
+          </div>
+          <label class="filter-event">Veranstaltung suchen<input id="eventQuery" type="search" placeholder="Name" /></label>
+          <label class="filter-type">Begegnung
+            <select id="type" hidden><option value="">Alle</option></select>
+            <details class="multi-select single-select-control" id="typeFilter">
+              <summary id="typeFilterSummary">Alle</summary>
+              <div id="typeFilterOptions" class="multi-select-options" role="listbox" aria-label="Begegnung auswählen"></div>
+            </details>
+          </label>
+          <div class="filter-league">
+            <span class="field-label">Liga</span>
+            <details class="multi-select" id="leagueFilter">
+              <summary id="leagueFilterSummary">Alle Ligen</summary>
+              <div id="leagueFilterOptions" class="multi-select-options" role="group" aria-label="Ligen auswählen"></div>
+            </details>
+          </div>
+          <label class="filter-class">Altersklasse
+            <select id="competitionClass" hidden><option value="">Alle</option></select>
+            <details class="multi-select single-select-control" id="classFilter">
+              <summary id="classFilterSummary">Alle</summary>
+              <div id="classFilterOptions" class="multi-select-options" role="listbox" aria-label="Altersklasse auswählen"></div>
+            </details>
+          </label>
+          <fieldset class="filter-date-range">
+            <legend>Datum</legend>
+            <label>Von<input id="from" type="date" /></label>
+            <label>Bis<input id="to" type="date" /></label>
+          </fieldset>
+          <fieldset class="filter-own-ttr">
+            <legend>Eigener TTR</legend>
+            <label>Von<input id="ownTtrFrom" type="text" inputmode="numeric" pattern="[0-9]*" /></label>
+            <label>Bis<input id="ownTtrTo" type="text" inputmode="numeric" pattern="[0-9]*" /></label>
+          </fieldset>
+          <fieldset class="filter-opponent-ttr">
+            <legend>Gegner TTR</legend>
+            <label>Von<input id="opponentTtrFrom" type="text" inputmode="numeric" pattern="[0-9]*" /></label>
+            <label>Bis<input id="opponentTtrTo" type="text" inputmode="numeric" pattern="[0-9]*" /></label>
+          </fieldset>
+          <label class="filter-set-count">Anzahl Sätze
+            <select id="setCount" hidden><option value="">Alle</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+            <details class="multi-select single-select-control" id="setCountFilter">
+              <summary id="setCountFilterSummary">Alle</summary>
+              <div id="setCountFilterOptions" class="multi-select-options" role="listbox" aria-label="Anzahl Sätze auswählen"></div>
+            </details>
+          </label>
+        </div>
+      </section>
+
+      <section class="results-section" id="resultsSection" aria-labelledby="resultsHeading">
+        <div class="results-sticky-header" id="resultsStickyHeader">
+          <h2 class="section-heading results-heading" id="resultsHeading">Ergebnisse</h2>
+          <section class="summary" id="summary"></section>
+          <p id="calculationNote" class="calculation-note">Die TTR-Änderungen der Einzelspiele sind berechnet und jeweils auf ganze Zahlen gerundet. Ihre Summe kann deshalb von der offiziellen Gesamtänderung abweichen, die erst nach Addition der ungerundeten Werte auf eine ganze Zahl gerundet wird.</p>
+          <nav class="result-toolbar" aria-label="Ergebnisansicht">
+            <div class="view-switcher">
+              <button type="button" data-view="opponents" aria-pressed="true">Nach Gegnern</button>
+              <button type="button" data-view="encounters" aria-pressed="false">Nach Begegnungen</button>
+              <button type="button" data-view="games" aria-pressed="false">Alle Spiele</button>
+            </div>
+            <div class="expand-actions" id="expandActions">
+              <button type="button" id="expandAll">Alle ausklappen</button>
+              <button type="button" id="collapseAll">Alle einklappen</button>
+            </div>
+          </nav>
+        </div>
+        <div class="panel">
+          <div id="resultsScrollTop" class="table-scroll table-scroll-proxy" aria-hidden="true"><div></div></div>
+          <div id="resultsScroll" class="table-scroll"><table id="resultsTable"></table></div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="web.js?v=33"></script>
+  </body>
+</html>
