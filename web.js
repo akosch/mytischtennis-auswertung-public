@@ -164,7 +164,9 @@ function expandedKeysFor(view = state.view) {
 function rememberViewScroll(view) {
   viewScrollPositions[view] = {
     top: window.scrollY,
-    left: elements.resultsScroll?.scrollLeft ?? 0,
+    left: state.view === "games"
+      ? elements.resultsScrollTop?.scrollLeft ?? 0
+      : elements.resultsScroll?.scrollLeft ?? 0,
     pageLeft: window.scrollX,
   };
 }
@@ -173,7 +175,7 @@ function restoreViewScroll(view) {
   const saved = viewScrollPositions[view] ?? { top: 0, left: 0, pageLeft: 0 };
   requestAnimationFrame(() => {
     window.scrollTo({ left: saved.pageLeft, top: saved.top, behavior: "auto" });
-    for (const scroll of [elements.resultsScroll, elements.resultsScrollTop]) {
+    for (const scroll of [elements.resultsScrollTop, elements.resultsScroll]) {
       if (scroll) scroll.scrollLeft = saved.left;
     }
   });
@@ -484,6 +486,20 @@ function seriesMetricFilter(label, mode, count) {
   return button;
 }
 
+function syncGamesHorizontalPosition() {
+  if (state.view !== "games") return;
+  const left = elements.resultsScrollTop.scrollLeft || elements.resultsScroll.scrollLeft || 0;
+  elements.resultsTable.style.position = "relative";
+  elements.resultsTable.style.left = `${-left}px`;
+}
+
+function bindGamesHorizontalFallback() {
+  if (elements.resultsScrollTop._gamesFallbackBound) return;
+  elements.resultsScrollTop._gamesFallbackBound = true;
+  elements.resultsScrollTop.addEventListener("scroll", syncGamesHorizontalPosition);
+  elements.resultsScroll.addEventListener("scroll", syncGamesHorizontalPosition);
+}
+
 function render() {
   const capture = currentCapture();
   const games = filterGames(capture?.games ?? [], filters());
@@ -524,9 +540,14 @@ function render() {
   else if (state.view === "encounters") renderEncounters(games);
   else renderOpponents(games);
   elements.resultsTable.dataset.view = state.view;
+  elements.resultsScroll.dataset.view = state.view;
   elements.calculationNote.hidden = state.view !== "encounters";
   setupStickyResultsHeader(elements.resultsSection, elements.resultsStickyHeader);
-  setupScrollProxy(elements.resultsScrollTop, elements.resultsScroll, elements.resultsTable);
+  setupScrollProxy(elements.resultsScrollTop, elements.resultsScroll, elements.resultsTable, {
+    transform: state.view === "games",
+  });
+  bindGamesHorizontalFallback();
+  syncGamesHorizontalPosition();
 }
 
 function populateFilters() {

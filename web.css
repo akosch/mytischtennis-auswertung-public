@@ -99,6 +99,13 @@ fieldset label { font-size: .76rem; }
 .summary { display: flex; gap: .55rem; flex-wrap: wrap; margin-bottom: .65rem; }
 .calculation-note { margin: 0 0 .55rem; color: #526f79; font-size: .78rem; }
 .panel { overflow: visible; border: 1px solid #d9e3e6; border-radius: .75rem; background: white; }
+#resultsScrollTop {
+  position: sticky;
+  top: var(--results-sticky-offset, 0px);
+  z-index: 15;
+  background: white;
+  box-shadow: 0 1px 0 #d9e3e6;
+}
 .table-scroll {
   display: block;
   width: 100%;
@@ -234,7 +241,8 @@ tbody tr[aria-expanded="true"] td:first-child::before { transform: rotate(90deg)
 #resultsTable[data-view="games"] > thead { top: var(--results-sticky-offset, 0px); }
 
 #resultsTable[data-view="games"] {
-  min-width: 0;
+  width: 100%;
+  min-width: 1430px;
   table-layout: fixed;
 }
 #resultsTable[data-view="games"] th,
@@ -390,4 +398,36 @@ tbody tr[aria-expanded="true"] td:first-child::before { transform: rotate(90deg)
   #resultsTable[data-view="games"] td:nth-child(4),
   #resultsTable[data-view="games"] th:nth-child(5),
   #resultsTable[data-view="games"] td:nth-child(5) { white-space: nowrap; }
+}
+
+/* Match the fixed-width layout used by the expanded result tables. Keeping
+   the score column wide enough prevents five set scores from overflowing into
+   the TTR columns before the horizontal proxy is used. */
+@media (max-width: 1600px) {
+  #resultsTable[data-view="games"] { width: 1430px; min-width: 1430px; }
+  #resultsTable[data-view="games"] th:nth-child(1) { width: 120px; }
+  #resultsTable[data-view="games"] th:nth-child(2) { width: 360px; }
+  #resultsTable[data-view="games"] th:nth-child(3) { width: 220px; }
+  #resultsTable[data-view="games"] th:nth-child(4) { width: 70px; }
+  #resultsTable[data-view="games"] th:nth-child(5) { width: 70px; }
+  #resultsTable[data-view="games"] th:nth-child(6) { width: 280px; }
+  #resultsTable[data-view="games"] th:nth-child(7) { width: 70px; }
+  #resultsTable[data-view="games"] th:nth-child(8) { width: 70px; }
+  #resultsTable[data-view="games"] th:nth-child(9) { width: 90px; }
+  #resultsTable[data-view="games"] th:nth-child(10) { width: 70px; }
+}
+
+/* The table itself must consume the horizontal scroll position from the
+   proxy on every viewport, including touch devices below 801px. */
+#resultsScroll[data-view="games"] {
+  overflow: visible;
+  clip-path: inset(0);
+}
+
+/* The proxy is above the table head; keep the head immediately below it. */
+#resultsTable[data-view="games"] > thead {
+  top: calc(var(--results-sticky-offset, 0px) + .8rem);
+}
+#resultsScrollTop[hidden] + #resultsScroll #resultsTable[data-view="games"] > thead {
+  top: calc(var(--results-sticky-offset, 0px) - 1px);
 }

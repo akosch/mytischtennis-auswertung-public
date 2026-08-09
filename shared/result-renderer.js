@@ -82,26 +82,43 @@ export function createSetBalanceCell(value) {
   return cell;
 }
 
-export function setupScrollProxy(proxy, scroll, table) {
+export function setupScrollProxy(proxy, scroll, table, { transform = false } = {}) {
   if (!proxy || !scroll || !table) return;
   const spacer = proxy.firstElementChild;
   if (!spacer) return;
 
+  const applyHorizontalPosition = (left) => {
+    if (transform) {
+      table.style.position = "relative";
+      table.style.left = `${-left}px`;
+      return;
+    }
+    if (scroll.scrollLeft !== left) scroll.scrollLeft = left;
+  };
+
   const syncWidth = () => {
     spacer.style.width = `${table.scrollWidth}px`;
     proxy.hidden = table.scrollWidth <= scroll.clientWidth + 1;
-    if (!proxy.hidden && proxy.scrollLeft !== scroll.scrollLeft) {
-      proxy.scrollLeft = scroll.scrollLeft;
+    if (!proxy.hidden) {
+      const left = transform ? proxy.scrollLeft : scroll.scrollLeft;
+      if (proxy.scrollLeft !== left) proxy.scrollLeft = left;
+      applyHorizontalPosition(left);
     }
   };
-  if (!proxy.dataset.bound) {
-    proxy.dataset.bound = "true";
-    proxy.addEventListener("scroll", () => {
-      if (scroll.scrollLeft !== proxy.scrollLeft) scroll.scrollLeft = proxy.scrollLeft;
-    });
-    scroll.addEventListener("scroll", () => {
-      if (proxy.scrollLeft !== scroll.scrollLeft) proxy.scrollLeft = scroll.scrollLeft;
-    });
+  if (proxy._scrollProxyBinding) {
+    proxy.removeEventListener("scroll", proxy._scrollProxyBinding.proxyHandler);
+    scroll.removeEventListener("scroll", proxy._scrollProxyBinding.scrollHandler);
+  }
+  const proxyHandler = () => applyHorizontalPosition(proxy.scrollLeft);
+  const scrollHandler = () => {
+    if (proxy.scrollLeft !== scroll.scrollLeft) proxy.scrollLeft = scroll.scrollLeft;
+  };
+  proxy.addEventListener("scroll", proxyHandler);
+  if (!transform) scroll.addEventListener("scroll", scrollHandler);
+  proxy._scrollProxyBinding = { proxyHandler, scrollHandler };
+  if (!transform) {
+    table.style.position = "";
+    table.style.left = "";
   }
   if (!proxy._scrollResizeObserver && typeof ResizeObserver === "function") {
     proxy._scrollResizeObserver = new ResizeObserver(syncWidth);
