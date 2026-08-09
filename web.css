@@ -316,3 +316,78 @@ tbody tr[aria-expanded="true"] td:first-child::before { transform: rotate(90deg)
   .filters > label:first-child { grid-column: span 2; }
   .filters fieldset { grid-column: span 2; }
 }
+
+/* iPad Safari can report a wider CSS viewport than the physical screen. Keep
+   the games table wide enough for all columns and let its scroll container
+   provide horizontal scrolling instead of compressing cells into each other. */
+@media (max-width: 800px) {
+  .results-section .panel { overflow: visible; }
+  .results-section .table-scroll {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+  #resultsTable[data-view="opponents"] { min-width: 640px; }
+  #resultsTable[data-view="encounters"] { min-width: 1130px; }
+  #resultsTable[data-view="games"] { width: 1100px; min-width: 1100px; }
+  .opponent-details-table { width: 1580px; min-width: 1580px; }
+  .encounter-details-table { width: 1280px; min-width: 1280px; }
+}
+
+@media (min-width: 801px) and (max-width: 1100px) {
+  .results-section .panel { overflow: visible; }
+  .results-section .table-scroll {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+  #resultsTable[data-view="opponents"] { min-width: 640px; }
+  #resultsTable[data-view="encounters"] { width: 100%; min-width: 0; }
+  #resultsTable[data-view="games"] { width: 1100px; min-width: 1100px; }
+  .opponent-details-table { width: 1580px; min-width: 1580px; }
+  .encounter-details-table { width: 1280px; min-width: 1280px; }
+}
+
+@media (max-width: 1100px) {
+  #resultsTable[data-view="games"] {
+    width: 1225px;
+    min-width: 1225px;
+  }
+  #resultsTable[data-view="games"] th:nth-child(1) { width: 120px; }
+  #resultsTable[data-view="games"] th:nth-child(2) { width: 310px; }
+  #resultsTable[data-view="games"] th:nth-child(3) { width: 150px; }
+  #resultsTable[data-view="games"] th:nth-child(4) { width: 65px; }
+  #resultsTable[data-view="games"] th:nth-child(5) { width: 60px; }
+  #resultsTable[data-view="games"] th:nth-child(6) { width: 210px; }
+  #resultsTable[data-view="games"] th:nth-child(7) { width: 65px; }
+  #resultsTable[data-view="games"] th:nth-child(8) { width: 65px; }
+  #resultsTable[data-view="games"] th:nth-child(9) { width: 85px; }
+  #resultsTable[data-view="games"] th:nth-child(10) { width: 65px; }
+}
+
+/* Some iPad Safari configurations expose a desktop-sized viewport. The
+   coarse-pointer rule makes the scrolling behavior independent of that. */
+@media (pointer: coarse) {
+  .results-section .panel { overflow: visible; }
+  .results-section .table-scroll {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+  #resultsTable[data-view="games"] { width: 1225px; min-width: 1225px; }
+  #resultsTable[data-view="games"] th:nth-child(3),
+  #resultsTable[data-view="games"] td:nth-child(3),
+  #resultsTable[data-view="games"] th:nth-child(4),
+  #resultsTable[data-view="games"] td:nth-child(4),
+  #resultsTable[data-view="games"] th:nth-child(5),
+  #resultsTable[data-view="games"] td:nth-child(5) { white-space: nowrap; }
+}
