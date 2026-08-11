@@ -3,13 +3,14 @@ import {
   encounterGroups,
   filterGames,
   individualTtrChange,
+  leagueForGame,
   leagueFromCompetition,
   longestResultSeries,
   numericValue,
   opponentStats,
   parseGermanDate,
   resultTotals,
-} from "./shared/stats.js?v=6";
+} from "./shared/stats.js?v=7";
 import { decryptJson } from "./shared/crypto.js";
 import { setupSingleSelect } from "./shared/filter-controls.js?v=1";
 import { CUP_LABELS, competitionTeams, formatCompetition, LEAGUE_LABELS } from "./shared/competition.js?v=2";
@@ -44,7 +45,7 @@ import {
   setupStickyResultsHeader,
   createToggleRow,
   headingClass,
-} from "./shared/result-renderer.js?v=4";
+} from "./shared/result-renderer.js?v=5";
 
 const elements = {
   status: document.querySelector("#status"),
@@ -309,7 +310,7 @@ function detailsRow(games, colSpan, includeEventColumns) {
       ];
       if (includeEventColumns) {
         return [
-          dateCell(game.date),
+          dateCell(game.date, { legacy: game.source === "legacy" }),
           td(formatCompetition(game.competition, game.type), "align-left"),
           ...commonCells,
         ];
@@ -377,7 +378,7 @@ function renderGames(games) {
   const appendGame = (game) => {
     const row = document.createElement("tr");
     row.append(
-      dateCell(game.date),
+      dateCell(game.date, { legacy: game.source === "legacy" }),
       td(formatCompetition(game.competition, game.type), "align-left"),
       td(game.opponentName, "align-left"),
       td(game.score, "center"),
@@ -414,7 +415,7 @@ function renderEncounters(games) {
   for (const encounter of sortedItems(encounterGroups(games), columns, state.sorts.encounters)) {
     const row = document.createElement("tr");
     row.append(
-      dateCell(encounter.date),
+      dateCell(encounter.date, { legacy: Boolean(encounter.legacyEncounterId) }),
       td(formatCompetition(encounter.competition, encounter.type), "align-left"),
       td(encounter.balance, "center"),
       td(encounter.type, "center"),
@@ -570,7 +571,7 @@ function populateFilters() {
 
 function populateLeagues() {
   const available = new Set(
-    (currentCapture()?.games ?? []).map((game) => leagueFromCompetition(game.competition)).filter(Boolean),
+    (currentCapture()?.games ?? []).map(leagueForGame).filter(Boolean),
   );
   state.selectedLeagues = new Set([...state.selectedLeagues].filter((league) => available.has(league)));
   elements.leagueFilterOptions.replaceChildren();

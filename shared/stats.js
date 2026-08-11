@@ -1,4 +1,9 @@
-import { formatCompetition, normalizeRomanNumerals } from "./competition.js";
+import {
+  CUP_LABELS,
+  formatCompetition,
+  LEAGUE_LABELS,
+  normalizeRomanNumerals,
+} from "./competition.js";
 
 export function parseGermanDate(value) {
   const match = value.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
@@ -10,11 +15,38 @@ function competitionCategory(value) {
   if (!value?.includes("|")) return { league: "", competitionClass: "" };
   const category = value.split("|", 1)[0].trim();
   const separator = category.indexOf("-");
-  if (separator < 0) return { league: category, competitionClass: "" };
+  const league = canonicalCompetitionCode(separator < 0 ? category : category.slice(0, separator).trim());
+  if (separator < 0) return { league, competitionClass: "" };
   return {
-    league: category.slice(0, separator).trim(),
+    league,
     competitionClass: category.slice(separator + 1).trim(),
   };
+}
+
+function categoryKey(value) {
+  return normalizeRomanNumerals(String(value ?? "").normalize("NFKC"))
+    .toLocaleLowerCase("de")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function canonicalCompetitionCode(value) {
+  const key = categoryKey(value);
+  for (const [code, label] of [...LEAGUE_LABELS, ...CUP_LABELS]) {
+    const labelKey = categoryKey(label);
+    const labelWithNumber = key.startsWith(labelKey)
+      && /^\d+$/u.test(key.slice(labelKey.length).trim());
+    if (key === categoryKey(code) || key === labelKey || labelWithNumber) return code;
+  }
+  return String(value ?? "").trim();
+}
+
+function canonicalLegacyLeague(value) {
+  const key = categoryKey(value);
+  for (const [code, label] of [...LEAGUE_LABELS, ...CUP_LABELS]) {
+    if (key === categoryKey(label)) return code;
+  }
+  return String(value ?? "").trim();
 }
 
 function normalizeSearchText(value) {
@@ -26,6 +58,17 @@ function normalizeSearchText(value) {
 
 export function leagueFromCompetition(value) {
   return competitionCategory(value).league;
+}
+
+export function leagueForGame(game) {
+  if (game?.source === "legacy") {
+    if (game.legacyLeague) return canonicalLegacyLeague(game.legacyLeague);
+    return String(game.competition ?? "")
+      .split("|", 1)[0]
+      .replace(/\s+-\s+Herren\s*$/u, "")
+      .trim();
+  }
+  return leagueFromCompetition(game?.competition);
 }
 
 export function classFromCompetition(value) {
@@ -61,6 +104,7 @@ export function individualTtrChange(game) {
 }
 
 function encounterKey(game) {
+  if (game.legacyEncounterId) return `legacy:${game.legacyEncounterId}`;
   return JSON.stringify([
     game.date,
     game.competition,
@@ -80,6 +124,12 @@ export function encounterGroups(games) {
     const encounter = encounters.get(key) ?? {
       key,
       date: game.date,
+      dateFrom: game.dateFrom ?? null,
+      dateTo: game.dateTo ?? null,
+      dateSortKey: game.dateSortKey ?? null,
+      datePrecision: game.datePrecision ?? null,
+      periodLabel: game.periodLabel ?? null,
+      legacyEncounterId: game.legacyEncounterId ?? null,
       competition: game.competition,
       changeConstant: game.changeConstant,
       balance: game.balance,
@@ -115,6 +165,8 @@ export function filterGames(games, filters = {}) {
     : Number(filters.ownTtrTo);
   const filtered = games.filter((game) => {
     const date = parseGermanDate(game.date);
+    const dateFrom = game.dateFrom ?? date;
+    const dateTo = game.dateTo ?? date;
     const ownTtr = Number(String(game.ttr ?? "").match(/\d+/)?.[0]) || null;
     const setCount = Number.isInteger(game.ownSets) && Number.isInteger(game.opponentSets)
       ? game.ownSets + game.opponentSets
@@ -123,13 +175,13 @@ export function filterGames(games, filters = {}) {
     const competition = normalizeSearchText(formatCompetition(game.competition, game.type));
     if (eventQuery && !competition.includes(eventQuery)) return false;
     if (teams.length && !teams.some((team) => competition.includes(team))) return false;
-    if (filters.from && date && date < filters.from) return false;
-    if (filters.to && date && date > filters.to) return false;
+    if (filters.from && dateTo && dateTo < filters.from) return false;
+    if (filters.to && dateFrom && dateFrom > filters.to) return false;
     if (filters.type && game.type !== filters.type) return false;
     const leagues = Array.isArray(filters.leagues)
       ? filters.leagues
       : filters.league ? [filters.league] : [];
-    if (leagues.length && !leagues.includes(leagueFromCompetition(game.competition))) return false;
+    if (leagues.length && !leagues.includes(leagueForGame(game))) return false;
     if (filters.competitionClass && classFromCompetition(game.competition) !== filters.competitionClass) return false;
     if (opponentTtrFrom != null && (game.opponentTtr == null || game.opponentTtr < opponentTtrFrom)) return false;
     if (opponentTtrTo != null && (game.opponentTtr == null || game.opponentTtr > opponentTtrTo)) return false;
@@ -221,11 +273,16 @@ function dateTimeKey(value) {
   return `${match[3]}-${match[2]}-${match[1]}T${match[4] ?? "00:00"}`;
 }
 
+function gameDateTimeKey(game) {
+  if (game?.dateSortKey) return String(game.dateSortKey);
+  return dateTimeKey(game?.date);
+}
+
 export function longestResultSeries(games, won) {
   const sourceOrder = new Map(games.map((game, index) => [game, index]));
   const chronological = [...games].sort((left, right) => {
-    const leftDate = dateTimeKey(left.date);
-    const rightDate = dateTimeKey(right.date);
+    const leftDate = gameDateTimeKey(left);
+    const rightDate = gameDateTimeKey(right);
     if (leftDate && rightDate && leftDate !== rightDate) return leftDate.localeCompare(rightDate);
     if (leftDate && !rightDate) return -1;
     if (!leftDate && rightDate) return 1;

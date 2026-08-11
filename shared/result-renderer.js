@@ -7,10 +7,15 @@ export function createCell(value, className = "") {
   return cell;
 }
 
-export function createDateCell(value) {
+export function createDateCell(value, { legacy = false } = {}) {
   const cell = document.createElement("td");
   cell.className = "date-cell";
-  const { date, time } = dateParts(value);
+  let displayDate = value;
+  if (legacy) {
+    const period = String(displayValue(value)).match(/^\s*(\d{4}\/\d{4})\s+(Hin|Rück|Hinrunde|Rückrunde)\s*$/u);
+    if (period) displayDate = `${period[1]}, ${period[2].startsWith("Rück") ? "Rück" : "Hin"}`;
+  }
+  const { date, time } = dateParts(displayDate);
   const parts = document.createElement("span");
   parts.className = "date-parts";
   const datePart = document.createElement("span");
@@ -44,13 +49,13 @@ export function createSetScoresCell(game) {
     if (match) {
       const own = document.createElement("span");
       own.className = "set-score-own";
-      own.textContent = match[1];
+      own.textContent = String(Number(match[1]));
       const separator = document.createElement("span");
       separator.className = "set-score-separator";
       separator.textContent = ":";
       const opponent = document.createElement("span");
       opponent.className = "set-score-opponent";
-      opponent.textContent = match[2];
+      opponent.textContent = String(Number(match[2]));
       value.append(own, separator, opponent);
     } else {
       value.classList.add("set-score-unparsed");
